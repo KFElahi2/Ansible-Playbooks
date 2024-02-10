@@ -1,0 +1,6 @@
+[app]
+node1
+node2
+
+[dbNode]
+db

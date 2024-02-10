@@ -1,0 +1,72 @@
+---
+- name: WebServer
+  hosts: app
+  tasks:
+  - name: Installing httpd
+    yum:
+      name: httpd
+      state: latest
+  - name: Starting httpd service
+    service:
+      name: httpd
+      state: started
+      enabled: yes
+  - name: Installing required tools
+    yum:
+      name:
+        - https://rpms.remirepo.net/enterprise/remi-release-7.rpm
+        - wget
+        - unzip
+        - nano 
+        - git
+        - net-tools
+        - yum-utils
+      state: present
+  - name: Enable php7.4
+    shell: yum-config-manager --enable remi-php74
+  - name: Installing necessary modules for app
+    yum:
+      name:
+        - php
+        - php-common
+        - php-opcache
+        - php-mcrypt
+        - php-cli
+        - php-gd
+        - php-curl
+        - php-mysql
+        - php-xmlrpc
+        - php-imap
+        - php-devel
+        - php-mbstring
+        - php-litespeed
+        - php-pdo
+        - php-pdo_mysql
+  - name: Configuring firewalld ......
+    firewalld:
+      service: http
+      permanent: yes
+      state: enabled
+      immediate: yes
+  - name: Disable SELinux
+    selinux:
+      state: disabled
+  - name: Adding virtual host
+    copy:
+      src: resources/kfe.com.conf
+      dest: /etc/httpd/conf.d/kfe.com.conf
+  - name: Clonning app ...
+    git:
+      repo: https://github.com/rob88/PHP-7.4-CRUD-App-With-SweetAlert.git
+      dest: /var/www/html
+      version: master
+      update: no
+  - name: Setting up app config ...
+    copy:
+      src: resources/appFiles/dbConfig.php
+      dest: /var/www/html/include/dbConfig.php
+  - name: Restarting httpd service
+    service:
+      name: httpd
+      state: restarted      
+...

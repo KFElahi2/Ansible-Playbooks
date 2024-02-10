@@ -1,0 +1,91 @@
+---
+- name: DBServer
+  hosts: db
+  vars:
+    run_msi: true
+    db_name: course_db
+    db_user: course_user
+    user_pass: Test@123
+    root_pass: Test@123
+  tasks:
+  - name: Installing tools
+    yum:
+      name:        
+        - wget
+        - yum-utils
+        - epel-release
+      state: present
+  - name: Installing tools
+    yum:
+      name:
+        - python2-pip
+      state: present
+  - name: Downloading MySQL
+    shell: wget https://dev.mysql.com/get/mysql80-community-release-el7-11.noarch.rpm && yum localinstall mysql80-community-release-el7-11.noarch.rpm -y
+  - name: Setting MySQL version
+    shell: yum-config-manager --enable mysql80-community
+  - name: Installalling MySQL
+    shell: yum install mysql-community-server -y
+  - name: Start and enable mysql service
+    service:
+      name: mysqld
+      state: started
+      enabled: yes
+  - name: Installing pexpect module for mysql secure installation
+    pip:
+      name: pexpect==3.3
+  - name: Fetching temporary password
+    shell: sudo grep 'temporary password' /var/log/mysqld.log | awk '{print $NF}'
+    register: temp_password
+  - name: MySQL secure Installation
+    expect:
+      command: mysql_secure_installation
+      responses:        
+        'Enter password for user root:': '{{temp_password.stdout_lines[0]}}'
+        'New password:': '{{root_pass}}'
+        'Re-enter new password:': '{{root_pass}}'
+        'Change the password for root ? \(\(Press y|Y for Yes, any other key for No\) : ' : 'n'
+        'Remove anonymous users? \(Press y|Y for Yes, any other key for No\) :' : 'y'
+        'Disallow root login remotely? \(Press y|Y for Yes, any other key for No\) :' : 'y'
+        'Remove test database and access to it? \(Press y|Y for Yes, any other key for No\) :' : 'y'
+        'Reload privilege tables now? \(Press y|Y for Yes, any other key for No\) :' : 'y'
+    when: run_msi == true
+  - name: Installing mysql-python module
+    package:
+      name: "python2-PyMySQL" # works better than MySQL-python
+  - name: Creating DB
+    mysql_db:
+      name: "{{db_name}}"
+      encoding: utf8
+      collation: utf8_general_ci
+      login_user: root
+      login_password: "{{root_pass}}"
+      state: present
+      login_unix_socket: /var/lib/mysql/mysql.sock
+  - name: Creating user
+    mysql_user:
+      name: "{{db_user}}"
+      password: "{{user_pass}}"
+      priv: "{{db_name}}.*:ALL"
+      login_user: root
+      login_password: "{{root_pass}}"
+      host: 192.168.195.0/24
+      state: present
+  - name: Copy database to host file
+    copy:
+      src: resources/app.sql
+      dest: /tmp/app.sql
+  - name: Restore database
+    mysql_db:
+      name: "{{db_name}}"
+      state: import
+      target: /tmp/app.sql
+      login_user: root
+      login_password: "{{root_pass}}"
+  - name: Configuring firewalld ......
+    firewalld:
+      port: 3306/tcp
+      permanent: yes
+      state: enabled
+      immediate: yes
+...
