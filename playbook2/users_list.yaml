@@ -1,0 +1,7 @@
+users:
+  - name: bob
+    group: devops
+  - name: sally
+    group: manager
+  - name: fred
+    group: devops

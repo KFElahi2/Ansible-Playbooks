@@ -1,0 +1,10 @@
+
+---
+- name: CreteUser
+  hosts: node3
+  vars_files:
+    - lock.yaml
+    - users_list.yaml
+  tasks:
+  - include_tasks: "create_user_tasks.yaml"
+    loop: "{{users}}"

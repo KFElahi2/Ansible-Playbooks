@@ -1,0 +1,18 @@
+---
+- name: CreteUser
+  hosts: node3
+  vars_files:
+    - users_list.yaml
+  tasks:
+  - name: Check if users are exists
+    command: getent passwd "{{item.name}}"
+    register: user_check_result
+    ignore_errors: true
+    loop: "{{users}}"
+  - name: Check result and Create user
+    user:
+      name: "{{item.item.name}}"
+      password: "{{item.item.pass | password_hash ('sha512')}}"
+      state: present
+    when: item.rc != 0
+    loop: "{{user_check_result.results}}"

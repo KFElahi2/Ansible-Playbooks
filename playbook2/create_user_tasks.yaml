@@ -1,0 +1,26 @@
+---
+- name: Create devops group
+  group:
+    name: "{{item.group}}"
+    state: present 
+  when: item.group == 'devops'
+- name: Create developer user
+  user: 
+    name: "{{ item.name }}"
+    group: "{{item.group}}"
+    password: "{{ pw_dev | password_hash ('sha512') }}"
+    state: present
+  when: item.group == 'devops'
+- name: Create manager group
+  group:
+    name: "{{item.group}}"
+    state: present 
+  when: item.group == 'manager'
+- name: Create manager user
+  user: 
+    name: "{{ item.name }}"
+    group: "{{item.group}}"
+    password: "{{ pw_mgr | password_hash ('sha512') }}"
+    state: present
+  when: item.group == 'manager'
+...

@@ -1,0 +1,9 @@
+---
+- name: Single loop for all task
+  debug:
+    msg: "This is test1"
+  when: "{{item.name == 'test1'}}"
+- name: Single loop for all task
+  debug:
+    msg: "This is test2"
+  when: "{{item.name == 'test2'}}"
